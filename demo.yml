@@ -1,0 +1,38 @@
+---
+- hosts: build
+  become: yes
+  tasks: 
+    - name: Install Git
+      apt: 
+        name: git
+        state: present
+        update_cache: true
+    -  name: Git Clone app
+       git: 
+        repo: "https://github.com/boxfuse/boxfuse-sample-java-war-hello.git"
+        dest: /home/user/boxfuse
+    - name: Install Maven
+      apt:
+        name: maven
+        state: present
+    - name: Build app
+      command: mvn clean package chdir="/home/user/boxfuse"
+    - name: Copy file .war
+      fetch:
+        src: /home/user/boxfuse/target/hello-1.0.war
+        dest: /home/user/webapp/hello-1.0.war
+
+- hosts: web
+  become: yes
+  tasks:
+    - name: Install JDK, Tomcat
+      apt:
+        name={{ item }}
+        state=present
+      with_items:
+        - default-jdk  
+        - tomcat9
+    - name: Copy file
+      copy:
+        src: /home/user/webapp/hello-1.0.war
+        dest: /var/lib/tomcat9/webapps/
